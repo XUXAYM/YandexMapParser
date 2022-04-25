@@ -7,7 +7,7 @@ using YandexMapParser.Domain.Entitites;
 
 namespace YandexMapParser.Domain
 {
-    public interface IGeocodingHandler
+    public interface IGeocodingHandler : IDisposable
     {
         Address FindAddressByPoint(AddressPoint point);
     }

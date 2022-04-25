@@ -8,15 +8,17 @@ namespace YandexMapParser.Domain.Entitites
 {
     public class AddressPoint
     {
-        public int Id { get; private set; }
+        public decimal Id { get; private set; }
+        public string CadastralNumber { get; private set; }
         public Point Point { get; private set; }
 
-        public AddressPoint(int id, Point point)
+        public AddressPoint(decimal id, string cadastralNumber, Point point)
         {
             Id = id;
+            CadastralNumber = cadastralNumber;
             Point = point;
         }
 
-        public AddressPoint(int id, double latitude, double longitude) : this(id, new Point(latitude, longitude)) { }
+        public AddressPoint(decimal id, string cadastralNumber, double latitude, double longitude) : this(id, cadastralNumber, new Point(latitude, longitude)) { }
     }
 }

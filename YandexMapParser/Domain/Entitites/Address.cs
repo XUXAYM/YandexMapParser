@@ -8,13 +8,15 @@ namespace YandexMapParser.Domain.Entitites
 {
     public class Address
     {
-        public int Id { get; private set; }
+        public decimal Id { get; private set; }
+        public string CadastralNumber { get; private set; }
         public string PrimaryAddressStr { get; private set; }
         public string SecondaryAddressStr { get; private set; }
 
-        public Address(int id, string primaryAddressStr, string secondaryAddressStr)
+        public Address(decimal id, string cadastralNumber, string primaryAddressStr, string secondaryAddressStr)
         {
             Id = id;
+            CadastralNumber = cadastralNumber;
             PrimaryAddressStr = primaryAddressStr;
             SecondaryAddressStr = secondaryAddressStr;
         }

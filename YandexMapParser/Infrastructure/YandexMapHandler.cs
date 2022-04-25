@@ -14,8 +14,9 @@ namespace YandexMapParser.Infrastructure
     {
         private const string YANDEX_MAP_URL_STRING = "https://yandex.ru/maps";
 
+        private bool _disposed = false;
         private IWebDriver webDriver;
-        private bool isBannerHiden = false; 
+        private bool isBannerHiden = false;
 
         public YandexMapHandler(IWebDriver webDriver)
         {
@@ -42,10 +43,15 @@ namespace YandexMapParser.Infrastructure
             {
                 address = FindAddressByPoint(point, 0);
             }
-            catch(Exception e)
+            catch (NoSuchElementException e)
             {
                 Program.logger.Error(e.Message);
                 address = FindAddressByPointWithRetry(point, delayPerTry + 100);
+            }
+            catch (Exception e)
+            {
+                Program.logger.Error(e.Message);
+                throw e;
             }
             return address;
         }
@@ -74,7 +80,7 @@ namespace YandexMapParser.Infrastructure
             {
                 FindClearButton().Click();
             }
-            catch 
+            catch
             {
                 Program.logger.Error("Clear button not founded");
             }
@@ -92,7 +98,7 @@ namespace YandexMapParser.Infrastructure
             var primaryAddressStr = FindPrimaryAddress().Text;
             var secondaryAddressStr = FindSecondaryAddress().Text;
 
-            return new Address(point.Id, primaryAddressStr, secondaryAddressStr);
+            return new Address(point.Id, point.CadastralNumber, primaryAddressStr, FormatAddressService.ReverseAddressStr(secondaryAddressStr));
         }
 
         private IWebElement FindBanner()
@@ -103,32 +109,99 @@ namespace YandexMapParser.Infrastructure
 
         private IWebElement FindInputField()
         {
-            string xPath = "/html/body/div[1]/div[2]/div[3]/div/div/div/div/form/div[2]/div/span/span/input";
-            return webDriver.FindElement(By.XPath(xPath));
+            try
+            {
+                string className = "input__context";
+                return webDriver.FindElements(By.ClassName(className)).First().FindElement(By.XPath("./input"));
+            }
+            catch
+            {
+                string xPath = "/html/body/div[1]/div[2]/div[2]/header/div/div/div/form/div[2]/div/span/span/input";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
         }
-        
+
         private IWebElement FindSearchButton()
         {
-            string xPath = "/html/body/div[1]/div[2]/div[3]/div/div/div/div/form/div[3]/button";
-            return webDriver.FindElement(By.XPath(xPath));
+            try
+            {
+                string xPath = "//button[@aria-label='Найти']";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
+            catch
+            {
+                string xPath = "/html/body/div[1]/div[2]/div[2]/header/div/div/div/form/div[3]/button";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
         }
 
         private IWebElement FindClearButton()
         {
-            string xPath = "/html/body/div[1]/div[2]/div[3]/div/div/div/div/form/div[5]/button";
-            return webDriver.FindElement(By.XPath(xPath));
+            try
+            {
+                string xPath = "//button[@aria-label='Закрыть']";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
+            catch
+            {
+                string xPath = "/html/body/div[1]/div[2]/div[2]/header/div/div/div/form/div[5]/button";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
         }
 
         private IWebElement FindPrimaryAddress()
         {
-            string xPath = "/html/body/div[1]/div[2]/div[10]/div/div[1]/div[1]/div[1]/div/div[1]/div/div/div[2]/div[2]/h1";
-            return webDriver.FindElement(By.XPath(xPath));
+            string className = "card-title-view__title";
+            return webDriver.FindElements(By.ClassName(className)).First();
         }
 
         private IWebElement FindSecondaryAddress()
         {
-            string xPath = "/html/body/div[1]/div[2]/div[10]/div/div[1]/div[1]/div[1]/div/div[1]/div/div/div[3]/div[1]";
-            return webDriver.FindElement(By.XPath(xPath));
+            try
+            {
+                string className = "toponym-card-title-view__description";
+                return webDriver.FindElements(By.ClassName(className)).First();
+            }
+            catch
+            {
+                string xPath = "/html/body/div[1]/div[2]/div[10]/div/div[1]/div[1]/div[1]/div/div[1]/div/div/div[3]/div[1]";
+                return webDriver.FindElement(By.XPath(xPath));
+            }
         }
+
+        #region Dispose methods
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    try
+                    {
+                        webDriver.Close();
+                        webDriver.Quit();
+                    }
+                    catch (Exception e) 
+                    {
+                        Program.logger.Error($"WebDriver quiting error. More info: {e.Message}");
+                    }
+                }
+                _disposed = true;
+            }
+        }
+
+        ~YandexMapHandler()
+        {
+            Dispose(false);
+        }
+
+        #endregion
     }
 }
